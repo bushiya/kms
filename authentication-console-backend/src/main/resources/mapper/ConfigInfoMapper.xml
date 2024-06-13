@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.transsion.authentication.model.repository.mapper.ConfigInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.transsion.authentication.model.bean.dto.ConfigInfoQueryDTO">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="value" property="value"/>
+        <result column="des" property="des"/>
+        <result column="status" property="status"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+            c.id,
+            c.name,
+            c.value,
+            c.des,
+            c.status,
+            c.create_user_id,
+            c.update_user_id,
+            c.create_time,
+            c.update_time
+    </sql>
+
+    <select id="queryModel" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from config_info c
+        <where>
+            <if test="queryReq.name!=null">
+                and c.name=#{queryReq.name}
+            </if>
+            <if test="queryReq.value!=null">
+                and c.value=#{queryReq.value}
+            </if>
+            <if test="queryReq.des!=null">
+                and c.des=#{queryReq.des}
+            </if>
+            <if test="queryReq.status!=null">
+                and c.status=#{queryReq.status}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryConfigInfoByNameAndValue" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from config_info c
+        <where>
+            <if test="name!=null">
+                and c.name=#{name}
+            </if>
+            <if test="value!=null">
+                and c.value=#{value}
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+
+    <select id="queryConfigInByValue" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from config_info c
+        <where>
+            <if test="value!=null">
+                and c.value=#{value}
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+
+</mapper>

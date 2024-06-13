@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.transsion.authentication.model.repository.mapper.BlacklistCertMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.transsion.authentication.model.bean.dto.BlacklistCertQueryDTO">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="cert_value" property="certValue"/>
+        <result column="status" property="status"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+            b.id,
+            b.name,
+            b.cert_value,
+            b.status,
+            b.create_user_id,
+            b.update_user_id,
+            b.create_time,
+            b.update_time
+    </sql>
+
+    <select id="queryCert" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from blacklist_cert b
+        <where>
+            <if test="queryReq.name!=null">
+                and b.name=#{queryReq.name}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryBlacklistByName" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from blacklist_cert b
+        <where>
+            <if test="name!=null">
+                and b.name=#{name}
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+
+    <select id="queryBlacklistByCertValue" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from blacklist_cert b
+        <where>
+            <if test="certValue!=null">
+                and b.cert_value=#{certValue}
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+
+</mapper>

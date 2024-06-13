@@ -1,0 +1,164 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven 3.8.6'
+    }
+
+    environment {
+        HARBOR_HOST = 'harbor.transsion-os.com'
+        HARBOR_DIRECTORY = 'os-kms'
+        //项目名称、jar包名称
+        SERVICE_NAME = 'os-kms-da'
+        JAR_NAME = 'os_kms_da.jar'
+        //镜像名称 模块名称：发布环境_GIT_TAG 例: service:test_v1.0.0
+        IMAGE_NAME = "${SERVICE_NAME}:${env.DEPLOY_ENV}_${GIT_TAG}"
+        //项目子目录
+        SUBDIRECTORY = 'authentication-da'
+    }
+
+    stages {
+        stage('Git-clone') {
+            steps {
+                script {
+                    switch(env.ACTION) {
+                        case "deploy":
+                            echo '开始部署环境,从gitlab拉取代码'
+                            checkout([$class: 'GitSCM', branches: [[name: '${GIT_TAG}']], browser: [$class: 'GitLab', repoUrl: ''], extensions: [], userRemoteConfigs: [[credentialsId: 'opsgitlab', url: 'https://gitlab.transsion-os.com/os-system/os-transid/os-transid-kms-backend.git']]])
+                            break
+                        default:
+                            echo '开始'+env.ACTION
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    switch(env.ACTION) {
+                        case "deploy":
+                            echo '编译代码....'
+                            sh "cd ${SUBDIRECTORY}; mvn clean package -Dmaven.test.skip=true"
+                            break
+                        default:
+                            echo '非发布指令,跳过.'
+                    }
+                }
+            }
+        }
+
+        stage('Push-image'){
+            steps{
+                script{
+                    switch(env.ACTION) {
+                        case "deploy":
+                            echo '构建并推送镜像...'
+                            withCredentials([usernamePassword(credentialsId: 'aaa164bd-3a83-4533-a878-222bca3e844f', passwordVariable: 'password', usernameVariable: 'username')]) {
+                                sh "docker login ${HARBOR_HOST} -u ${username} -p ${password}"
+                            }
+                            echo "登录 harbor 成功..."
+
+                            echo "将 ${JAR_NAME} 拷贝到 ${env.DEPLOY_ENV}环境 Dockerfile 所在目录..."
+                            sh "cp $WORKSPACE/${SUBDIRECTORY}/target/${JAR_NAME} $WORKSPACE/${SUBDIRECTORY}/${env.DEPLOY_ENV}/${JAR_NAME}"
+                            echo "${JAR_NAME} 拷贝成功..."
+
+                            echo "开始执行${env.DEPLOY_ENV}环境 Dockerfile..."
+                            sh "cd $WORKSPACE/${SUBDIRECTORY}/${env.DEPLOY_ENV} && docker build  -t ${IMAGE_NAME} ."
+                            echo "${env.DEPLOY_ENV}环境 Dockerfile 执行成功..."
+
+                            echo "将镜像 ${IMAGE_NAME} 推送至 ${HARBOR_DIRECTORY} 目录下..."
+                            HARBOR_IMAGE_NAME = "${HARBOR_HOST}/${HARBOR_DIRECTORY}/${IMAGE_NAME}"
+                            sh "docker tag ${IMAGE_NAME} ${HARBOR_IMAGE_NAME}"
+                            sh "docker push ${HARBOR_IMAGE_NAME}"
+                            echo "镜像 ${IMAGE_NAME} 推送成功..."
+
+                            echo "删除本地资源..."
+                            sh "docker rmi -f ${HARBOR_IMAGE_NAME}"
+                            sh "docker rmi -f ${IMAGE_NAME}"
+                            sh "docker images"
+                            echo "删除镜像成功..."
+                            sh "rm -f $WORKSPACE/${SUBDIRECTORY}/target/${JAR_NAME}"
+                            echo "删除jar包成功..."
+
+                            echo '构建并推送成功...'
+                            sh "sed -i s/${SERVICE_NAME}:latest/${SERVICE_NAME}:${env.DEPLOY_ENV}_${GIT_TAG}/g ${SUBDIRECTORY}/${env.DEPLOY_ENV}/deployment.yaml"
+                        break
+                        default:
+                            echo '非发布指令,跳过Push-image'
+                    }
+                }
+            }
+        }
+        stage('ExecCommand') {
+            steps {
+                script {
+                    switch(env.ACTION) {
+                        case "deploy":
+                        echo env.K8S_LIST
+                        for(service_host in env.K8S_LIST.tokenize(',')){
+                            sshPublisher(publishers:
+                            [sshPublisherDesc(configName: service_host,
+                            transfers: [sshTransfer(cleanRemote: false, excludes: '',
+                            execCommand: '''
+                            deployment_file="deployment.yaml"
+                            deployment_ns="os-system"
+                            app_date=$(date  +%Y%m%d)
+                            server_name="os-kms-da"
+                            deploy_home="/home/os-kms/${server_name}/"
+                            history="${deploy_home}${app_date}/"
+                            current_home="${deploy_home}current/"
+                            if [ ! -d $history ]; then
+                              mkdir -p $history
+                            fi
+                            if [ ! -d $current_home ]; then
+                               mkdir -p $current_home
+                            fi
+                            echo "保留历史deploy..."
+                            cp ${deploy_home}${deployment_file} ${history}${deployment_file}
+                            rm -rf ${current_home}${deployment_file}
+                            mv ${deploy_home}${deployment_file} ${current_home}${deployment_file}
+                            kubectl apply -f ${current_home}${deployment_file}
+                            ''',
+                            execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false,
+                            patternSeparator: '[, ]+', remoteDirectory: "/home/${HARBOR_DIRECTORY}/${SERVICE_NAME}", remoteDirectorySDF: false,
+                            removePrefix: "${SUBDIRECTORY}/${env.DEPLOY_ENV}/", sourceFiles: "${SUBDIRECTORY}/${env.DEPLOY_ENV}/deployment.yaml")],
+                            usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: true)])
+                        }
+
+                        break
+                        case "restart":
+                        echo env.K8S_LIST
+                        for(service_host in env.SERVERS_LIST.tokenize(',')){
+                            sshPublisher(publishers:
+                            [sshPublisherDesc(configName: service_host,
+                            transfers: [sshTransfer(cleanRemote: false, excludes: '',
+                            execCommand: 'kubectl rollout restart deployment os-kms-da-api-deployment -n os-system',
+                            execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false,
+                            patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false,
+                            removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false,
+                            useWorkspaceInPromotion: false, verbose: false)])
+                        }
+
+                        break
+                        case rollback:
+                        echo env.K8S_LIST
+                        for(service_host in env.SERVERS_LIST.tokenize(',')){
+                            sshPublisher(publishers:
+                            [sshPublisherDesc(configName: service_host,
+                            transfers: [sshTransfer(cleanRemote: false, excludes: '',
+                            execCommand: 'kubectl rollout undo  deploy/os-kms-da-api-deployment -n os-system',
+                            execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false,
+                            patternSeparator: '[, ]+', remoteDirectory: '', remoteDirectorySDF: false,
+                            removePrefix: '', sourceFiles: '')], usePromotionTimestamp: false,
+                            useWorkspaceInPromotion: false, verbose: false)])
+                        }
+
+                        break
+                    }
+                }
+            }
+        }
+
+    }
+}

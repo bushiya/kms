@@ -1,0 +1,20 @@
+package com.transsion.authenticationfactory;
+
+import com.transsion.authenticationfactory.infrastructure.utils.CertUtil;
+
+import java.net.UnknownHostException;
+
+/**
+ * @Description:
+ * @Author jiakang.chen
+ * @Date 2023/10/16
+ */
+public class IpTest {
+    public static void main(String[] args) throws UnknownHostException {
+//        InetAddress localHost = InetAddress.getLocalHost();
+//        String ip = localHost.getHostAddress();
+//        System.out.println("Local IP address: " + ip);
+        String cert = "MIIEPDCCAySgAwIBAgIGAYtCz9V5MA0GCSqGSIb3DQEBCwUAMGYxITAfBgkqhkiG9w0BCQEMElRlc3RAdHJhbnNzaW9uLmNvbTELMAkGA1UEBhMCSEsxDTALBgNVBAoTBFRlc3QxCzAJBgNVBAsTAjAwMQswCQYDVQQLEwIxNTELMAkGA1UEAxMCTk4wHhcNMjMxMDEzMTI0MzE4WhcNMjYxMDEzMTI0MzE4WjCBijEiMCAGA1UEAxMZS01TIEF1dGggQ29tcGF0aWJpbGl0eSBDQTELMAkGA1UEBhMCQ04xETAPBgNVBAgTCFNoYW5nSGFpMREwDwYDVQQHEwhTaGFuZ0hhaTEdMBsGA1UEChMUa21zLnRyYW5zc2lvbi1vcy5jb20xEjAQBgNVBAsTCXRyYW5zc2lvbjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAN7VIt0V+05DLSOUSirw7oSPmDZfj7t7zVj2ZmoYy1+y0WtmnGUmLSfljFV750WFkaqbj2HTb24O+MRdePQ/I8S+H+y8oknEKe05VmC6w8mYPsCkrYPmMByIstP2DJ/tqqS5u10eyJ5JydvZwLFtdSJk044nWuEzk8CWxWkBuN4Z+5Rf4udIPFLYNWS/dbLvFaB9sckcLRvXX6dmDYrUYyKVmrlTxL+4wt5DR07ru2h3U6eyT/HuLKBeIxzgzHMtOqa7tK3APTPpnDMjdvR+O8uwyvYWVuoEkpR0esG2qNB5Jh3H1NFPjSOqdN/ZaiapPGrdWF5BFwjwVYr/hbHATQsCAwEAAaOByjCBxzAfBgNVHSMEGDAWgBR9YTKR5P3jDUYyoxg8+cy81NfqyjBqBgNVHSAEYzBhMF8GDisGAQQBlRICAgEBAQEBME0wSwYIKwYBBQUHAgIwPww9VGhpcyBjZXJ0aWZpY2F0ZSBtYXkgYmUgdXNlZCBmb3IgZGVtb25zdHJhdGlvbiBwdXJwb3NlcyBvbmx5LjAMBgNVHRMEBTADAQH/MAsGA1UdDwQEAwIBtjAdBgNVHQ4EFgQUYLxlivJ8zMed5wqt4O0cpo99ZbAwDQYJKoZIhvcNAQELBQADggEBACFaCwY9UKxvD4XPkgnzY5AyAvYuyO9gd4joU5xxHQcBXHfsy8YRt733lJ/q3KolSgQ6fYwilciNp8dh6NSdJLT891+PVWNsv8TLKX+hdzAWMyfhtovUTzWfnNO6IUUmBohEZuAnXP5KsiEIAKlftZAk8zl6zDerDINDsMGlFsb6CpiW6Z27q4vfDrGlSQycRLLJNCD2UB/+1AQzy3pS+eYWLk7yuVVZ8X7KBFVFNMMfyvN69Lh8J1t8SUhYU/T09Lcz4sNqVH5552AVl5L9UFY/ZVhEHPxRMDzKFrHfKZMOP3a68G3fHaEOFaLIRTUk4q+91oaUC/Z9fffedno9VqQ=";
+        CertUtil.lf(cert);
+    }
+}

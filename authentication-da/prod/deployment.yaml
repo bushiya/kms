@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: os-kms-da-api-deployment
+  namespace: os-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: os-kms-da-api
+  template:
+    metadata:
+      labels:
+        app: os-kms-da-api
+    spec:
+      imagePullSecrets:
+        - name: harbor-secert
+      serviceAccountName: fluentd-account
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - os-kms-da-api
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: os-kms-da
+          image: harbor.transsion-os.com/os-kms/os-kms-da:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 5G
+            requests:
+              cpu: 300m
+              memory: 3G
+          readinessProbe:
+            httpGet:
+              path: /check
+              port: 8113
+              scheme: HTTP
+            initialDelaySeconds: 1
+            periodSeconds: 15
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /check
+              port: 8113
+              scheme: HTTP
+            initialDelaySeconds: 1
+            timeoutSeconds: 2
+            periodSeconds: 15
+          startupProbe:
+            httpGet:
+              path: /check
+              port: 8113
+              scheme: HTTP
+            failureThreshold: 60
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: varlog
+              mountPath: /data/logs/
+        - name: fluentd-agent
+          image: harbor.transsion-os.com/os-plug-in/fluentd-k8s:1.16
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1G
+            requests:
+              cpu: 10m
+              memory: 50Mi
+          env:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: varlog
+              mountPath: /data/logs/
+            - name: config-volume
+              mountPath: /fluentd/etc/
+      volumes:
+        - name: varlog
+          emptyDir: {}
+        - name: config-volume
+          configMap:
+            name: fluentd-config

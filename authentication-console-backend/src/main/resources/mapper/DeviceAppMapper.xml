@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.transsion.authentication.model.repository.mapper.DeviceAppMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.transsion.authentication.model.bean.dto.DeviceAppQueryDTO">
+        <id column="id" property="id"/>
+        <result column="app_id" property="appId"/>
+        <result column="app_name" property="appName"/>
+        <result column="app_package" property="appPackage"/>
+        <result column="app_sign" property="appSign"/>
+        <result column="app_des" property="appDes"/>
+        <result column="ip" property="ip"/>
+        <result column="app_pub" property="appPub"/>
+        <result column="status" property="status"/>
+        <result column="create_user_id" property="createUserId"/>
+        <result column="update_user_id" property="updateUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+            d.id,
+            d.app_id,
+            d.app_name,
+            d.app_package,
+            d.app_sign,
+            d.app_des,
+            d.ip,
+            d.app_pub,
+            d.status,
+            d.create_user_id,
+            d.update_user_id,
+            d.create_time,
+            d.update_time
+    </sql>
+
+    <select id="search" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from device_app d
+        order by d.app_name ASC
+    </select>
+
+    <select id="queryByAppId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from device_app d
+        <where>
+            <if test="deviceApp.appId!=null">
+                and d.app_id=#{deviceApp.appId}
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+
+    <select id="queryByAppName" resultType="java.lang.Integer">
+        select 1 from device_app d
+        <where>
+            <if test="deviceApp.appName!=null">
+                and d.app_name=#{deviceApp.appName}
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+
+    <select id="queryByAppPackage" resultType="java.lang.Integer">
+        select 1 from device_app d
+        <where>
+            <if test="deviceApp.appPackage!=null">
+                and d.app_package=#{deviceApp.appPackage}
+            </if>
+        </where>
+        LIMIT 1
+    </select>
+</mapper>
